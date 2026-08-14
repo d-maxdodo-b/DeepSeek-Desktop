@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+dist/
+.pnpm-store/
+
+# 运行时配置(含个人路径/密钥, 绝不推送)
+config.json
+*.local.json
+
+# 环境文件
+.env
+.env.*
+
+# 日志
+logs/
+*.log
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 临时
+*.tmp
+.temp/
