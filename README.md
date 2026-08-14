@@ -1,5 +1,7 @@
 # DSH Desktop — DeepSeek Harness 桌面壳
 
+![banner](docs/assets/定.png)
+
 DeepSeek Harness 的 Electron 桌面壳: 进程管理 + 自绘标题栏 + 资源挂接面板 + 皮肤系统 + 多语言。
 
 ## 功能
