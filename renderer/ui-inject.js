@@ -29,11 +29,12 @@
       if (wp) {
         const fade = (window.__dshSkins && window.__dshSkins.fade) || ((c) => c);
         const bgb = expanded["--dsw-alias-bg-base"] || "#0a0a0d";
-        expanded["--dsw-alias-bg-base"] = fade(bgb, 0.80);
-        expanded["--dsw-alias-bg-layer-1"] = fade(expanded["--dsw-alias-bg-layer-1"] || bgb, 0.90);
-        expanded["--dsw-alias-bg-layer-2"] = fade(expanded["--dsw-alias-bg-layer-2"] || bgb, 0.93);
-        expanded["--dsw-alias-bg-overlay"] = fade(expanded["--dsw-alias-bg-overlay"] || bgb, 0.96);
-        extra = `body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(${fade(bgb, 0.68)},${fade(bgb, 0.68)}),url("${wp}") center/cover no-repeat}`;
+        // 壁纸显著可见: 遮罩只压 30%, 表层 55~93% 半透明, 壁纸透出率 ~30%。
+        expanded["--dsw-alias-bg-base"] = fade(bgb, 0.55);
+        expanded["--dsw-alias-bg-layer-1"] = fade(expanded["--dsw-alias-bg-layer-1"] || bgb, 0.80);
+        expanded["--dsw-alias-bg-layer-2"] = fade(expanded["--dsw-alias-bg-layer-2"] || bgb, 0.87);
+        expanded["--dsw-alias-bg-overlay"] = fade(expanded["--dsw-alias-bg-overlay"] || bgb, 0.93);
+        extra = `body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(${fade(bgb, 0.30)},${fade(bgb, 0.30)}),url("${wp}") center/cover no-repeat}`;
       }
     }
     // 关键: DSH web 把 --dsw-alias-* 定义在 body / body[data-ds-dark-theme] 上,
