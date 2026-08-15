@@ -14,9 +14,14 @@
     const skins = (window.__dshSkins && window.__dshSkins.SKINS) || {};
     const skin = id ? skins[id] : null;
     if (!skin || !skin.tokens) return;
+    // 全量派生: 13 核心 token → ~78 个 alias token(按钮/代码块/滚动条/
+    // tooltip/markdown/状态色全覆盖), 消除"只变一半"的拼接感。
+    const expanded = (window.__dshSkins && window.__dshSkins.expand)
+      ? window.__dshSkins.expand(skin)
+      : skin.tokens;
     // 关键: DSH web 把 --dsw-alias-* 定义在 body / body[data-ds-dark-theme] 上,
     // 只注入 :root 对页面元素无效(离元素更近的 body 定义胜出), 必须同体覆盖。
-    const vars = Object.entries(skin.tokens).map(([k, v]) => `${k}: ${v};`).join("\n");
+    const vars = Object.entries(expanded).map(([k, v]) => `${k}: ${v};`).join("\n");
     const css = `:root, body, body[data-ds-dark-theme] {\n${vars}\n}`;
     const style = document.createElement("style");
     style.id = "dshx-skin";
