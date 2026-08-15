@@ -1,6 +1,7 @@
 const { spawn, exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const http = require("http");
 const config = require("./config");
 
@@ -46,20 +47,44 @@ class Backend {
     return fs.existsSync(path.join(p, "package.json"));
   }
 
+  resolveLaunchCmd() {
+    const enginePath = config.get().enginePath;
+    const candidates = [
+      path.join(enginePath, "apps", "cli", "lib", "bin.js"),
+      path.join(os.homedir(), ".dsh", "profiles", "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js")
+    ];
+    const built = candidates.find((p) => fs.existsSync(p));
+    if (built) return { cmd: "node", args: [built, "web"], shell: false };
+    return { cmd: "pnpm", args: ["dsh", "web"], shell: true };
+  }
+
   start() {
     if (this.state === "running" || this.state === "starting") return;
     if (!this.engineExists()) {
       this.setError("engine missing");
       return;
     }
+    this.ping(config.get().port).then((ok) => {
+      if (ok) {
+        console.log("[backend] reuse existing engine on 127.0.0.1:" + config.get().port);
+        this.setState("running");
+        return;
+      }
+      this.spawnEngine();
+    });
+  }
+
+  spawnEngine() {
     this.setState("starting");
     const cfg = config.get();
     const stream = this.ensureLogStream();
 
     const args = ["dsh", "web"];
-    const child = spawn("pnpm", args, {
+    const launch = this.resolveLaunchCmd();
+    console.log(`[backend] launch: ${launch.cmd} ${launch.args.join(" ")}`);
+    const child = spawn(launch.cmd, launch.args, {
       cwd: cfg.enginePath,
-      shell: true,
+      shell: launch.shell,
       env: { ...process.env }
     });
 
@@ -104,14 +129,14 @@ class Backend {
           if (ok) {
             clearInterval(timer);
             done();
-          } else if (tries >= 15) {
+          } else if (tries >= 30) {
             clearInterval(timer);
             console.log("[backend] health timeout");
             this.setState("crashed");
           }
         })
         .catch(() => {
-          if (tries >= 15) {
+          if (tries >= 30) {
             clearInterval(timer);
             this.setState("crashed");
           }
