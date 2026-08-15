@@ -18,6 +18,19 @@ DeepSeek Harness 的 Electron 桌面壳: 进程管理 + 自绘标题栏 + 资源
 - **后端复用**: 启动时 ping 端口, 已在运行则直接复用(不双开); 优先加载编译产物 bin.js
 - **附图本地视觉**: 主窗口粘贴图片发送 → 自动走 Ollama minicpm-v4.6(/vision)识别后以文本提交(纯文本模型兼容)
 
+## 跨机器同步(随身 F 盘)
+
+代码/知识全在 F 盘随身携带, C 盘只有可再生产物(预设/会话)。任意机器插盘后**一条命令**拉起完整环境:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File F:\记忆中枢\部署词\miao-preset\sync-machine.ps1
+```
+
+自动完成: ①git pull(本仓库, GitHub) ②补依赖(缺才装) ③部署 miao 预设到 `C:\.dsh` 并设默认 ④拉起语音/视觉网关(3900)+Ollama ⑤启动本壳。
+
+公司机器入口: `F:\记忆中枢\待处理\公司部署.bat`(双击即跑)+ `公司部署.md`(说明)。
+部署词/DSH 仓库无远程, 随身 F 盘即同步载体; 本仓库更新 = 本地 commit/push → 他机 git pull。
+
 ## 架构
 
 ```
