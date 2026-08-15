@@ -11,9 +11,12 @@ DeepSeek Harness 的 Electron 桌面壳: 进程管理 + 自绘标题栏 + 资源
 - **资源挂接**: 24 项 F盘资源路径配置(技能库/知识库/记忆中枢/MCP/ComfyUI 等), 启动校验存在性
 - **模型中心**: API 模型(deepseek-v4-flash) + 本地 Ollama 模型检测/启动 + AI MODEL 目录
 - **记忆中枢**: OpenMemory 健康检测/启动(localhost:8080)
-- **皮肤系统**: 7 套语义 Token 皮肤(默认浅/深, Codex暗, Kanagawa, Solarized, Gruvbox, Berserk)
+- **皮肤系统**: 11 套语义 Token 皮肤(默认浅/深, Codex, VS Code Dark+, One Dark Pro, Tokyo Night, Nord, Kanagawa, Solarized, Gruvbox, Berserk), 标题栏 ◐ 即时切换 + 持久化, 浅/深分组 + 三色块预览
+- **Berserk 壁纸**: 剑风传奇 4K 壁纸压缩内嵌, 全屏背景层 + 表层半透明融合(左右一体)
 - **多语言**: 中文/粤语/蒙古语/藏语/维吾尔语/彝语 界面词条
 - **Token 统计**: 官方 DeepSeek V3 tokenizer 精确计算会话 token(常驻 Python 进程)
+- **后端复用**: 启动时 ping 端口, 已在运行则直接复用(不双开); 优先加载编译产物 bin.js
+- **附图本地视觉**: 主窗口粘贴图片发送 → 自动走 Ollama minicpm-v4.6(/vision)识别后以文本提交(纯文本模型兼容)
 
 ## 架构
 
@@ -61,7 +64,9 @@ pnpm start
 
 ## 皮肤系统
 
-皮肤 = `--dsw-alias-*` 语义 Token 覆盖集(与 dsh 官方 token 体系对齐), 通过 executeJavaScript 注入 `:root`。新增皮肤: 在 `renderer/skins.js` 加一个 token 集即可。
+皮肤 = 13 个核心语义 Token(与品鉴系统色板 SSoT 一一对应), 注入时经 `expandSkinTokens()` 派生全量 81 token(71 alias + 10 specific), 注入到 `body` / `body[data-ds-dark-theme]` 同体覆盖 —— 输入框、侧栏、选择器、气泡、代码块全部随皮肤走。新增皮肤: 在 `renderer/skins.js` 加 13-token 对象 + 品鉴 `皮肤色板\` 加 CSS 即可, 派生自动完成。
+
+壁纸: 皮肤可带 `wallpaperKey`, 资源在 `renderer/wallpapers.js`(base64 内嵌, 4K 原图归档品鉴 `wallpapers\`)。
 
 ## 多语言
 
