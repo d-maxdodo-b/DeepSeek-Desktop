@@ -270,7 +270,7 @@ function registerIpc() {
   ipcMain.handle("ui:winIsMaximized", () => !!(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()));
 
   // ── 皮肤: 与 renderer/skins.js 的 SKIN_IDS 对齐 ──────────────────
-  const SKIN_IDS = ["default-light", "default-dark", "codex-dark", "kanagawa", "solarized", "gruvbox", "berserk"];
+  const SKIN_IDS = ["default-light", "default-dark", "codex-dark", "vscode-dark", "onedark", "tokyo-night", "nord", "kanagawa", "solarized", "gruvbox", "berserk"];
   function broadcastSkin(id) {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("ui:skin-changed", id);

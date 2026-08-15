@@ -439,12 +439,16 @@ async function renderSystem() {
           <option value="default-light" ${config.skin === "default-light" ? "selected" : ""}>默认浅色</option>
           <option value="default-dark" ${config.skin === "default-dark" ? "selected" : ""}>默认深色</option>
           <option value="codex-dark" ${config.skin === "codex-dark" ? "selected" : ""}>Codex 暗色</option>
+          <option value="vscode-dark" ${config.skin === "vscode-dark" ? "selected" : ""}>VS Code Dark+</option>
+          <option value="onedark" ${config.skin === "onedark" ? "selected" : ""}>One Dark Pro</option>
+          <option value="tokyo-night" ${config.skin === "tokyo-night" ? "selected" : ""}>Tokyo Night</option>
+          <option value="nord" ${config.skin === "nord" ? "selected" : ""}>Nord</option>
           <option value="kanagawa" ${config.skin === "kanagawa" ? "selected" : ""}>Kanagawa 和风</option>
           <option value="solarized" ${config.skin === "solarized" ? "selected" : ""}>Solarized 复古</option>
           <option value="gruvbox" ${config.skin === "gruvbox" ? "selected" : ""}>Gruvbox 复古暖</option>
           <option value="berserk" ${config.skin === "berserk" ? "selected" : ""}>剑风传奇 Berserk</option>
         </select>
-        <span style="font-size:11px;color:var(--text2)">切换后重启壳子生效</span>
+        <span style="font-size:11px;color:var(--text2)">主窗口标题栏 ◐ 即时切换</span>
       </div>
       <div class="row">
         <label>界面语言</label>

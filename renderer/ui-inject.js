@@ -14,7 +14,10 @@
     const skins = (window.__dshSkins && window.__dshSkins.SKINS) || {};
     const skin = id ? skins[id] : null;
     if (!skin || !skin.tokens) return;
-    const css = ":root{\n" + Object.entries(skin.tokens).map(([k, v]) => `${k}: ${v};`).join("\n") + "\n}";
+    // 关键: DSH web 把 --dsw-alias-* 定义在 body / body[data-ds-dark-theme] 上,
+    // 只注入 :root 对页面元素无效(离元素更近的 body 定义胜出), 必须同体覆盖。
+    const vars = Object.entries(skin.tokens).map(([k, v]) => `${k}: ${v};`).join("\n");
+    const css = `:root, body, body[data-ds-dark-theme] {\n${vars}\n}`;
     const style = document.createElement("style");
     style.id = "dshx-skin";
     style.textContent = css;
@@ -96,23 +99,29 @@
       .dshx-titlebar .dshx-skinbtn:hover { border-color: var(--dsw-alias-brand-primary, #3b5bdb); }
       .dshx-titlebar .dshx-skinbtn:active { transform: scale(.94); }
       .dshx-titlebar .dshx-skinmenu {
-        position: absolute; top: 32px; right: 0; min-width: 176px; z-index: 2147483001;
+        position: absolute; top: 32px; right: 0; min-width: 220px; z-index: 2147483001;
         background: var(--dsw-alias-bg-overlay, #fff); border: 1px solid var(--dsw-alias-border-l1, #dfe4ea);
         border-radius: 8px; padding: 5px; box-shadow: 0 8px 24px rgba(15, 23, 42, .16);
         transform-origin: top right; animation: dshx-menu-in .14s ease;
       }
       @keyframes dshx-menu-in { from { opacity: 0; transform: scale(.96) translateY(-3px); } to { opacity: 1; transform: none; } }
+      .dshx-titlebar .dshx-skingroup {
+        padding: 5px 9px 3px; font-size: 10.5px; font-weight: 600; letter-spacing: .4px;
+        color: var(--dsw-alias-label-secondary, #5a6472); text-transform: uppercase;
+      }
       .dshx-titlebar .dshx-skinitem {
-        display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 5px;
+        display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 5px;
         font-size: 12px; color: var(--dsw-alias-label-primary, #20262e); cursor: pointer;
         transition: background .12s ease, transform .12s ease;
       }
       .dshx-titlebar .dshx-skinitem:hover { background: var(--dsw-alias-bg-layer-2, #f2f4f7); }
       .dshx-titlebar .dshx-skinitem:active { transform: scale(.98); }
       .dshx-titlebar .dshx-skinitem .dshx-swatch {
-        width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l2, #c9d2dc);
-        flex-shrink: 0;
+        display: flex; flex-shrink: 0; overflow: hidden; border-radius: 4px;
+        border: 1px solid var(--dsw-alias-border-l2, #c9d2dc); width: 34px; height: 18px;
       }
+      .dshx-titlebar .dshx-skinitem .dshx-swatch i { flex: 1 1 0; min-width: 0; }
+      .dshx-titlebar .dshx-skinitem .dshx-skinname { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .dshx-titlebar .dshx-skinitem.active { color: var(--dsw-alias-brand-primary, #3b5bdb); font-weight: 600; }
       .dshx-titlebar .dshx-skinitem.active::after { content: "✓"; margin-left: auto; }
     `;
@@ -193,18 +202,33 @@
     const ids = (window.__dshSkins && window.__dshSkins.SKIN_IDS) || Object.keys(skins);
     const current = () => window.__dshSkinId__ || "default-light";
 
+    function swatchHtml(tok) {
+      const bg = tok["--dsw-alias-bg-base"] || "#eceff3";
+      const brand = tok["--dsw-alias-brand-primary"] || "#3b5bdb";
+      const label = tok["--dsw-alias-label-primary"] || "#20262e";
+      return `<span class="dshx-swatch"><i style="background:${bg}"></i><i style="background:${brand}"></i><i style="background:${label}"></i></span>`;
+    }
+
     function rebuildMenu(activeId) {
       menu.innerHTML = "";
-      for (const id of ids) {
-        const skin = skins[id];
-        if (!skin) continue;
-        const item = document.createElement("div");
-        item.className = "dshx-skinitem" + (id === activeId ? " active" : "");
-        const tok = skin.tokens || {};
-        const swatchBg = `linear-gradient(135deg, ${tok["--dsw-alias-bg-base"] || "#eceff3"} 50%, ${tok["--dsw-alias-brand-primary"] || "#3b5bdb"} 50%)`;
-        item.innerHTML = `<span class="dshx-swatch" style="background:${swatchBg}"></span><span>${skin.name || id}</span>`;
-        item.addEventListener("click", () => applySkin(id));
-        menu.appendChild(item);
+      const order = ["light", "dark"];
+      const groupLabel = { light: "浅色主题", dark: "深色主题" };
+      for (const mode of order) {
+        const group = ids.filter(id => (skins[id] && (skins[id].mode || "light")) === mode);
+        if (group.length === 0) continue;
+        const head = document.createElement("div");
+        head.className = "dshx-skingroup";
+        head.textContent = groupLabel[mode];
+        menu.appendChild(head);
+        for (const id of group) {
+          const skin = skins[id];
+          if (!skin) continue;
+          const item = document.createElement("div");
+          item.className = "dshx-skinitem" + (id === activeId ? " active" : "");
+          item.innerHTML = `${swatchHtml(skin.tokens || {})}<span class="dshx-skinname">${skin.name || id}</span>`;
+          item.addEventListener("click", () => applySkin(id));
+          menu.appendChild(item);
+        }
       }
     }
 
