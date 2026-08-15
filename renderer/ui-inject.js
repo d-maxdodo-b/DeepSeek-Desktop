@@ -34,6 +34,9 @@
         expanded["--dsw-alias-bg-layer-1"] = fade(expanded["--dsw-alias-bg-layer-1"] || bgb, 0.80);
         expanded["--dsw-alias-bg-layer-2"] = fade(expanded["--dsw-alias-bg-layer-2"] || bgb, 0.87);
         expanded["--dsw-alias-bg-overlay"] = fade(expanded["--dsw-alias-bg-overlay"] || bgb, 0.93);
+        // 左侧边栏同组半透明, 与右侧统一融合(壁纸左右连成一体)。
+        expanded["--dsw-specific-sidebar-fill"] = fade(expanded["--dsw-specific-sidebar-fill"] || bgb, 0.80);
+        expanded["--dsw-specific-sidebar-nav-item-active"] = fade(expanded["--dsw-specific-sidebar-nav-item-active"] || bgb, 0.85);
         extra = `body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(${fade(bgb, 0.30)},${fade(bgb, 0.30)}),url("${wp}") center/cover no-repeat}`;
       }
     }
