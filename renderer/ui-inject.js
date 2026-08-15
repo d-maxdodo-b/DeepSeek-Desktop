@@ -85,6 +85,36 @@
         white-space: normal !important; overflow: visible !important; text-overflow: clip !important;
         display: -webkit-box !important; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
       }
+      .dshx-titlebar .dshx-skinwrap { position: relative; margin-left: 6px; -webkit-app-region: no-drag; flex-shrink: 0; }
+      .dshx-titlebar .dshx-skinbtn {
+        width: 30px; height: 26px; border: 1px solid var(--dsw-alias-border-l1, #dfe4ea);
+        background: var(--dsw-alias-bg-layer-1, #fafbfc); color: var(--dsw-alias-label-primary, #20262e);
+        border-radius: 6px; font-size: 13px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: transform .12s ease, background .15s ease, border-color .15s ease;
+      }
+      .dshx-titlebar .dshx-skinbtn:hover { border-color: var(--dsw-alias-brand-primary, #3b5bdb); }
+      .dshx-titlebar .dshx-skinbtn:active { transform: scale(.94); }
+      .dshx-titlebar .dshx-skinmenu {
+        position: absolute; top: 32px; right: 0; min-width: 176px; z-index: 2147483001;
+        background: var(--dsw-alias-bg-overlay, #fff); border: 1px solid var(--dsw-alias-border-l1, #dfe4ea);
+        border-radius: 8px; padding: 5px; box-shadow: 0 8px 24px rgba(15, 23, 42, .16);
+        transform-origin: top right; animation: dshx-menu-in .14s ease;
+      }
+      @keyframes dshx-menu-in { from { opacity: 0; transform: scale(.96) translateY(-3px); } to { opacity: 1; transform: none; } }
+      .dshx-titlebar .dshx-skinitem {
+        display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 5px;
+        font-size: 12px; color: var(--dsw-alias-label-primary, #20262e); cursor: pointer;
+        transition: background .12s ease, transform .12s ease;
+      }
+      .dshx-titlebar .dshx-skinitem:hover { background: var(--dsw-alias-bg-layer-2, #f2f4f7); }
+      .dshx-titlebar .dshx-skinitem:active { transform: scale(.98); }
+      .dshx-titlebar .dshx-skinitem .dshx-swatch {
+        width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l2, #c9d2dc);
+        flex-shrink: 0;
+      }
+      .dshx-titlebar .dshx-skinitem.active { color: var(--dsw-alias-brand-primary, #3b5bdb); font-weight: 600; }
+      .dshx-titlebar .dshx-skinitem.active::after { content: "✓"; margin-left: auto; }
     `;
     const s = document.createElement("style");
     s.textContent = css;
@@ -128,12 +158,18 @@
     bar.innerHTML = `
       <span class="dshx-brand">${whale}</span>
       <span class="dshx-brand-text" id="dshx-brand-text">${greeting(userName)}</span>
+      <span class="dshx-skinwrap">
+        <button id="dshx-skin-btn" class="dshx-skinbtn" title="切换皮肤">◐</button>
+        <div class="dshx-skinmenu" id="dshx-skinmenu" hidden></div>
+      </span>
       <span class="dshx-winbtns">
         <button id="dshx-min" title="最小化">─</button>
         <button id="dshx-max" title="最大化">□</button>
         <button id="dshx-close" class="dshx-close" title="关闭">✕</button>
       </span>`;
     document.body.appendChild(bar);
+
+    initSkinSwitcher();
 
     const api = getWinApi();
     if (api) {
@@ -147,6 +183,68 @@
     } else {
       document.querySelectorAll(".dshx-winbtns button").forEach((b) => b.style.display = "none");
     }
+  }
+
+  function initSkinSwitcher() {
+    const btn = document.getElementById("dshx-skin-btn");
+    const menu = document.getElementById("dshx-skinmenu");
+    if (!btn || !menu) return;
+    const skins = (window.__dshSkins && window.__dshSkins.SKINS) || {};
+    const ids = (window.__dshSkins && window.__dshSkins.SKIN_IDS) || Object.keys(skins);
+    const current = () => window.__dshSkinId__ || "default-light";
+
+    function rebuildMenu(activeId) {
+      menu.innerHTML = "";
+      for (const id of ids) {
+        const skin = skins[id];
+        if (!skin) continue;
+        const item = document.createElement("div");
+        item.className = "dshx-skinitem" + (id === activeId ? " active" : "");
+        const tok = skin.tokens || {};
+        const swatchBg = `linear-gradient(135deg, ${tok["--dsw-alias-bg-base"] || "#eceff3"} 50%, ${tok["--dsw-alias-brand-primary"] || "#3b5bdb"} 50%)`;
+        item.innerHTML = `<span class="dshx-swatch" style="background:${swatchBg}"></span><span>${skin.name || id}</span>`;
+        item.addEventListener("click", () => applySkin(id));
+        menu.appendChild(item);
+      }
+    }
+
+    function applySkin(id) {
+      if (!skins[id]) return;
+      window.__dshSkinId__ = id;
+      const old = document.getElementById("dshx-skin");
+      if (old) old.remove();
+      injectSkin();
+      rebuildMenu(id);
+      menu.hidden = true;
+      try {
+        if (window.dshUi && window.dshUi.setSkin) window.dshUi.setSkin(id);
+      } catch (e) {}
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (menu.hidden) rebuildMenu(current());
+      menu.hidden = !menu.hidden;
+    });
+    window.addEventListener("pointerdown", (e) => {
+      if (menu.hidden) return;
+      if (!menu.contains(e.target) && e.target !== btn) menu.hidden = true;
+    });
+    window.addEventListener("keydown", (e) => { if (e.key === "Escape") menu.hidden = true; });
+    try {
+      if (window.dshUi && window.dshUi.onSkinChange) {
+        window.dshUi.onSkinChange((id) => {
+          if (id && skins[id]) {
+            window.__dshSkinId__ = id;
+            const old = document.getElementById("dshx-skin");
+            if (old) old.remove();
+            injectSkin();
+            rebuildMenu(id);
+          }
+        });
+      }
+    } catch (e) {}
+    rebuildMenu(current());
   }
 
   let usageMax = 1;

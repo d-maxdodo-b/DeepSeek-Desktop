@@ -1,11 +1,38 @@
 const { BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const config = require("./config");
 const backend = require("./backend");
 const tokenizer = require("./tokenizer");
 
 const ICON_PATH = path.join(__dirname, "..", "build", "icons", "dsh-icon.ico");
 const SHELL_HTML = path.join(__dirname, "..", "renderer", "index.html");
+
+/** 渲染进程错误日志(白屏诊断): %APPDATA%/dsh-desktop/logs/renderer-error.log */
+function logRendererError(msg) {
+  try {
+    const logDir = path.join(config.get().logPath || path.join(require("os").homedir(), "AppData", "Roaming", "dsh-desktop", "logs"));
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const file = path.join(logDir, "renderer-error.log");
+    fs.appendFileSync(file, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch (e) { /* ignore */ }
+}
+
+function attachRendererDiagnostics(win, label) {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.on("console-message", (e, level, message, line, sourceId) => {
+    if (level >= 2) logRendererError(`[${label}] console(${level}) ${sourceId}:${line} ${message}`);
+  });
+  win.webContents.on("render-process-gone", (e, details) => {
+    logRendererError(`[${label}] render-process-gone reason=${details.reason} exitCode=${details.exitCode}`);
+  });
+  win.webContents.on("did-fail-load", (e, code, desc) => {
+    logRendererError(`[${label}] did-fail-load code=${code} desc=${desc}`);
+  });
+  win.webContents.on("preload-error", (e, path, error) => {
+    logRendererError(`[${label}] preload-error ${path} ${error && error.message}`);
+  });
+}
 
 let mainWindow = null;
 let shellWindow = null;
@@ -30,6 +57,7 @@ function createMainWindow() {
   });
 
   loadWebUi();
+  attachRendererDiagnostics(mainWindow, "main");
 
   mainWindow.on("page-title-updated", (e) => {
     e.preventDefault();
@@ -142,7 +170,14 @@ function showShellWindow() {
 
 function registerIpc() {
   ipcMain.handle("config:get", () => config.get());
-  ipcMain.handle("config:set", (e, patch) => config.set(patch));
+  ipcMain.handle("config:set", (e, patch) => {
+    const prev = config.get().skin;
+    const data = config.set(patch);
+    if (patch && typeof patch.skin === "string" && patch.skin !== prev) {
+      broadcastSkin(patch.skin);
+    }
+    return data;
+  });
   ipcMain.handle("config:setMount", (e, key, value) => config.setMount(key, value));
 
   ipcMain.handle("config:saveEnvKey", (e, key) => {
@@ -233,6 +268,23 @@ function registerIpc() {
   });
   ipcMain.handle("ui:winClose", () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide(); });
   ipcMain.handle("ui:winIsMaximized", () => !!(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized()));
+
+  // ── 皮肤: 与 renderer/skins.js 的 SKIN_IDS 对齐 ──────────────────
+  const SKIN_IDS = ["default-light", "default-dark", "codex-dark", "kanagawa", "solarized", "gruvbox", "berserk"];
+  function broadcastSkin(id) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("ui:skin-changed", id);
+    }
+    if (shellWindow && !shellWindow.isDestroyed()) {
+      shellWindow.webContents.send("ui:skin-changed", id);
+    }
+  }
+  ipcMain.handle("skin:set", (e, id) => {
+    if (typeof id !== "string" || !SKIN_IDS.includes(id)) return config.get().skin;
+    config.set({ skin: id });
+    broadcastSkin(id);
+    return id;
+  });
 
   backend.onStateChange((s) => {
     if (mainWindow && !mainWindow.isDestroyed()) {

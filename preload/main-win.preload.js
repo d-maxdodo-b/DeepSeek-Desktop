@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("dshUi", {
   getConfig: () => ipcRenderer.invoke("ui:getConfig"),
   countTokens: (text) => ipcRenderer.invoke("tokenizer:count", text),
+  setSkin: (id) => ipcRenderer.invoke("skin:set", id),
   onSkinChange: (fn) => ipcRenderer.on("ui:skin-changed", (e, skin) => fn(skin)),
   win: {
     minimize: () => ipcRenderer.invoke("ui:winMinimize"),
