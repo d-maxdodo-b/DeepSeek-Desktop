@@ -25,6 +25,14 @@ function rgba(hex, alpha) {
   const { r, g, b } = hexToRgb(hex)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
+/** 任意颜色(hex 或 rgb())加透明度 — 壁纸模式把表层变半透明用。 */
+function fade(color, alpha) {
+  if (typeof color !== 'string') return color
+  const c = color.trim()
+  const m = c.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+  if (m) return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})`
+  return rgba(c, alpha)
+}
 
 /**
  * 从 13 个核心 Token 派生 DSH web 全量 alias Token(浅/深皮肤各一套规则)。
@@ -123,6 +131,17 @@ function expandSkinTokens(skin) {
     '--dsw-alias-state-warn-tertiary': mix(warn, bg, 0.88),
     '--dsw-alias-toast-bg': dark ? mix(bg, W, 0.12) : mix(bg, K, 0.25),
     '--dsw-alias-tooltip-bg': dark ? mix(bg, W, 0.15) : mix(bg, K, 0.30),
+    // ── --dsw-specific-* 第三命名空间: 输入框/选择器/菜单/提示/气泡/侧栏导航 ──
+    '--dsw-specific-input-major': dark ? mix(bg, W, 0.06) : mix(l2, W, 0.55),
+    '--dsw-specific-login-input': dark ? mix(bg, W, 0.04) : mix(l2, W, 0.5),
+    '--dsw-specific-menu': dark ? l2 : mix(l2, W, 0.65),
+    '--dsw-specific-selector': dark ? l2 : mix(l2, W, 0.65),
+    '--dsw-specific-tip': dark ? mix(bg, W, 0.08) : mix(bg, K, 0.03),
+    '--dsw-specific-bubble': dark ? mix(br, bg, 0.35) : mix(br, bg, 0.90),
+    '--dsw-specific-bubble-highlight': dark ? mix(br, bg, 0.55) : mix(br, bg, 0.80),
+    '--dsw-specific-sidebar-nav-item-active': dark ? mix(br, bg, 0.30) : mix(br, bg, 0.88),
+    '--dsw-specific-sidebar-nav-item-active-accent': br,
+    '--dsw-specific-sidebar-nav-item-hover': dark ? rgba(W, 0.06) : rgba(K, 0.05),
     '--dsw-specific-sidebar-fill': side,
   }
 }
@@ -321,6 +340,7 @@ const SKINS = {
   berserk: {
     name: "剑风传奇 Berserk",
     mode: "dark",
+    wallpaperKey: "berserk",
     tokens: {
       "--dsw-alias-bg-base": "#0a0a0d",
       "--dsw-alias-bg-layer-1": "#131316",
@@ -342,8 +362,8 @@ const SKINS = {
 const SKIN_IDS = Object.keys(SKINS);
 
 if (typeof window !== "undefined") {
-  window.__dshSkins = { SKINS, SKIN_IDS, expand: expandSkinTokens };
+  window.__dshSkins = { SKINS, SKIN_IDS, expand: expandSkinTokens, fade };
 }
 if (typeof module !== "undefined") {
-  module.exports = { SKINS, SKIN_IDS, expand: expandSkinTokens };
+  module.exports = { SKINS, SKIN_IDS, expand: expandSkinTokens, fade };
 }

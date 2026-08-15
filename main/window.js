@@ -94,6 +94,7 @@ function loadWebUi() {
       const fs = require("fs");
       const root = path.join(__dirname, "..", "renderer");
       const langCode = fs.readFileSync(path.join(root, "lang-packs.js"), "utf8");
+      const wallpapersCode = fs.readFileSync(path.join(root, "wallpapers.js"), "utf8");
       const skinsCode = fs.readFileSync(path.join(root, "skins.js"), "utf8");
       const injectCode = fs.readFileSync(path.join(root, "ui-inject.js"), "utf8");
       const wordmarkSvg = fs.readFileSync(path.join(root, "..", "build", "icons", "dsh-brand-text.svg"), "utf8").replace(/\s+/g, " ").trim();
@@ -103,6 +104,8 @@ function loadWebUi() {
       const skin = cfg.skin || "default-light";
       const userName = cfg.userName || "海龙龙";
       mainWindow.webContents.executeJavaScript(langCode).then(() => {
+        return mainWindow.webContents.executeJavaScript(wallpapersCode);
+      }).then(() => {
         return mainWindow.webContents.executeJavaScript(skinsCode);
       }).then(() => {
         const code = injectCode

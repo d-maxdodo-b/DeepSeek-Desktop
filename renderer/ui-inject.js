@@ -14,15 +14,32 @@
     const skins = (window.__dshSkins && window.__dshSkins.SKINS) || {};
     const skin = id ? skins[id] : null;
     if (!skin || !skin.tokens) return;
-    // 全量派生: 13 核心 token → ~78 个 alias token(按钮/代码块/滚动条/
-    // tooltip/markdown/状态色全覆盖), 消除"只变一半"的拼接感。
+    // 全量派生: 13 核心 token → ~78 个 alias token + specific token 全覆盖,
+    // 消除"只变一半"的拼接感。
     const expanded = (window.__dshSkins && window.__dshSkins.expand)
       ? window.__dshSkins.expand(skin)
-      : skin.tokens;
+      : { ...skin.tokens };
+    // 壁纸模式: 皮肤带 wallpaperKey/wallpaper 时, 全屏背景层 + 表层半透明,
+    // 让壁纸透出(深色皮肤配深色壁纸, 文字仍清晰)。
+    let extra = "";
+    const wpRef = skin.wallpaperKey || skin.wallpaper;
+    if (typeof wpRef === "string") {
+      const pool = window.__dshWallpapers || {};
+      const wp = pool[wpRef] || wpRef;
+      if (wp) {
+        const fade = (window.__dshSkins && window.__dshSkins.fade) || ((c) => c);
+        const bgb = expanded["--dsw-alias-bg-base"] || "#0a0a0d";
+        expanded["--dsw-alias-bg-base"] = fade(bgb, 0.80);
+        expanded["--dsw-alias-bg-layer-1"] = fade(expanded["--dsw-alias-bg-layer-1"] || bgb, 0.90);
+        expanded["--dsw-alias-bg-layer-2"] = fade(expanded["--dsw-alias-bg-layer-2"] || bgb, 0.93);
+        expanded["--dsw-alias-bg-overlay"] = fade(expanded["--dsw-alias-bg-overlay"] || bgb, 0.96);
+        extra = `body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(${fade(bgb, 0.68)},${fade(bgb, 0.68)}),url("${wp}") center/cover no-repeat}`;
+      }
+    }
     // 关键: DSH web 把 --dsw-alias-* 定义在 body / body[data-ds-dark-theme] 上,
     // 只注入 :root 对页面元素无效(离元素更近的 body 定义胜出), 必须同体覆盖。
     const vars = Object.entries(expanded).map(([k, v]) => `${k}: ${v};`).join("\n");
-    const css = `:root, body, body[data-ds-dark-theme] {\n${vars}\n}`;
+    const css = `:root, body, body[data-ds-dark-theme] {\n${vars}\n}\n${extra}`;
     const style = document.createElement("style");
     style.id = "dshx-skin";
     style.textContent = css;
